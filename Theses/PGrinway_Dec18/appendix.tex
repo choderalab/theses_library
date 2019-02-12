@@ -1,0 +1,57 @@
+\chapter{Appendix A}
+%
+\section{Derivation of the Acceptance Probability}
+Having assembled all the components for the algorithm to leave the expanded ensemble of configurations and chemical states invariant, I now derive the formula for the acceptance probability.
+%
+In order to do this, I will impose pathwise detailed balance, ensuring that 
+%
+First, let us review the notation that we will be using.
+%
+\subsection{Proposal of Chemical State Jump}
+%
+Beginning at a state $(x_{core}, x_{old}, M_{old})$, where we denote the unique degrees of freedom not common to the new molecule $x_{old}$, the degrees of freedom in common $x_{core}$, the old molecule identity $M_{old}$, and denoting $\mathcal{T}$ as the forward transition and $\tilde{\mathcal{T}}$ as the reverse transition:
+%
+\begin{eqnarray}
+    \mathcal{T} = (M_\mathrm{old} \rightarrow M_\mathrm{new}) \sim q(\cdot~|~M_\mathrm{old}) \\
+    order_\mathrm{old \rightarrow new} \sim order(n_\mathrm{x_{new}}) \\
+    x_\mathrm{new} \sim \phi(x_\mathrm{new} | x_\mathrm{core}, M_\mathrm{old}, M_\mathrm{new}) \\
+    x^{*}_\mathrm{new}, x^{*}_\mathrm{core} \sim \Phi (x_\mathrm{core}, x_\mathrm{new}, x_\mathrm{old} \rightarrow x^{*}_\mathrm{core}, x^{*}_\mathrm{new}, x^{*}_\mathrm{old}) \\
+\end{eqnarray}
+%
+Here, $x_{new}$ are the new degrees of freedom in the new molecule that are not shared with the old molecule, and $x^*$ denotes coordinates that are proposed as part of the probabilistic proposal.
+%
+%
+\subsection{Derivation of Acceptance Probability}
+%
+Now, using $\pi (x, \mathcal{M})$ as the equilibrium distribution, we impose super-detailed balance on the specific proposed transition path $\mathcal{T}$:
+\begin{eqnarray}
+%
+\pi(x_\mathrm{core}, x_\mathrm{old}, \mathcal{M}_\mathrm{old}) q[\mathcal{T}] \mathcal{A}[\mathcal{T}] = \pi(x'_\mathrm{core}, x'_\mathrm{new}, \mathcal{M}_\mathrm{new}) q[\tilde{\mathcal{T}}] \mathcal{A}[\tilde{\mathcal{T}}]
+%
+\end{eqnarray}
+%
+\begin{eqnarray}
+&& \pi(x_\mathrm{core}, x_\mathrm{old}, \mathcal{M}_\mathrm{old}) \, q(\mathcal{M}_\mathrm{new} | \mathcal{M}_\mathrm{old}) \, \phi(x_\mathrm{new} | x_\mathrm{core}, \mathcal{M}_\mathrm{old}, \mathcal{M}_\mathrm{new}) \, \Phi(x \rightarrow x' | \mathcal{M}_\mathrm{old} \rightarrow \mathcal{M}_\mathrm{new}) \, \mathcal{A}[\mathcal{T}] \nonumber \notag \\
+%
+&=& \pi(x'_\mathrm{core}, x'_\mathrm{new}, \mathcal{M}_\mathrm{new}) \, P(\mathcal{M}_\mathrm{old} | \mathcal{M}_\mathrm{new}) \, \phi(x'_\mathrm{old} | x'_\mathrm{core}, \mathcal{M}_\mathrm{new}, \mathcal{M}_\mathrm{old}) \, \Phi(x' \rightarrow x | \mathcal{M}_\mathrm{new} \rightarrow \mathcal{M}_\mathrm{old}) \, \mathcal{A}[\tilde{\mathcal{T}}] \nonumber \\
+%
+%
+\end{eqnarray}
+Collecting terms, we can arrive at a condition on the acceptance criteria:
+\begin{eqnarray}
+\frac{\mathcal{A}[\mathcal{T}]}{\mathcal{A}[\tilde{\mathcal{T}}]} &=& \frac{\pi(x'_\mathrm{core}, x'_\mathrm{new}, \mathcal{M}_\mathrm{new})}{\pi(x_\mathrm{core}, x_\mathrm{old}, \mathcal{M}_\mathrm{old})} \frac{P(\mathcal{M}_\mathrm{old} | \mathcal{M}_\mathrm{new})}{P(\mathcal{M}_\mathrm{new} | \mathcal{M}_\mathrm{old})} \frac{\phi(x'_\mathrm{old} | x'_\mathrm{core}, \mathcal{M}_\mathrm{new}, \mathcal{M}_\mathrm{old})}{\phi(x_\mathrm{new} | x_\mathrm{core}, \mathcal{M}_\mathrm{old}, \mathcal{M}_\mathrm{new})} \nonumber \\ 
+\frac{\Phi(x' \rightarrow x | \mathcal{M}_\mathrm{new} \rightarrow \mathcal{M}_\mathrm{old})} {\Phi(x \rightarrow x' | \mathcal{M}_\mathrm{old} \rightarrow \mathcal{M}_\mathrm{new})} \notag \nonumber \\
+%
+&=& \frac{e^{-u(x'_\mathrm{core}, x'_\mathrm{new}, \mathcal{M}_\mathrm{new}) + g(\mathcal{M}_\mathrm{new})}}{e^{-u(x_\mathrm{core}, x_\mathrm{old}, \mathcal{M}_\mathrm{old}) + g(\mathcal{M}_\mathrm{old})}} \frac{P(\mathcal{M}_\mathrm{old} | \mathcal{M}_\mathrm{new})}{P(\mathcal{M}_\mathrm{new} | \mathcal{M}_\mathrm{old})} \frac{\phi(x'_\mathrm{old} | x'_\mathrm{core}, \mathcal{M}_\mathrm{new}, \mathcal{M}_\mathrm{old})}{\phi(x_\mathrm{new} | x_\mathrm{core}, \mathcal{M}_\mathrm{old}, \mathcal{M}_\mathrm{new})} \nonumber \\ 
+e^{-\Delta S[x \rightarrow x' | \mathcal{M}_\mathrm{old} \rightarrow \mathcal{M}_\mathrm{new}]} \notag \nonumber \\
+%
+&=& \frac{e^{-u(x'_\mathrm{core}, x'_\mathrm{new}, \mathcal{M}_\mathrm{new}) + g(\mathcal{M}_\mathrm{new})}}{e^{-u(x_\mathrm{core}, x_\mathrm{old}, \mathcal{M}_\mathrm{old}) + g(\mathcal{M}_\mathrm{old})}} \frac{P(\mathcal{M}_\mathrm{old} | \mathcal{M}_\mathrm{new})}{P(\mathcal{M}_\mathrm{new} | \mathcal{M}_\mathrm{old})} \frac{\phi(x'_\mathrm{old} | x'_\mathrm{core}, \mathcal{M}_\mathrm{new}, \mathcal{M}_\mathrm{old})}{\phi(x_\mathrm{new} | x_\mathrm{core}, \mathcal{M}_\mathrm{old}, \mathcal{M}_\mathrm{new})} \nonumber \\  
+e^{-w[x \rightarrow x' | \lambda = 0 \rightarrow 1]} \frac{e^{-u(x, \lambda=0)}}{e^{-u(x', \lambda=1)}} \label{equation:hybrid-acceptance-criteria}
+\end{eqnarray}
+%
+The Metropolis-like criteria satisfies this requirement:
+%
+\begin{eqnarray}
+P_\mathrm{accept}[\mathcal{T}] &=& \mathrm{min} \left\{ 1, \, e^{-w[x \rightarrow x' | \lambda = 0 \rightarrow 1]} \frac{e^{-u(x, \lambda=0)}}{e^{-u(x', \lambda=1)}} \right\}
+\end{eqnarray}
+%

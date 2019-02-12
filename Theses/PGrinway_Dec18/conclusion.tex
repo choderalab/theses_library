@@ -1,0 +1,217 @@
+\chapter{Conclusion}
+%
+\section{Contributions of work}
+%
+This work makes several novel contributions to the field.
+%
+First, this work develops a theoretically rigorous algorithm for simulations that can explore multiple chemical states in a single simulation.
+%
+This relieves the restriction that most free energy calculation methods have, which is that they only compute relative free energy differences between one pair of ligands, or, in certain cases, a small set.
+%
+Second, this work provides a theoretically rigorous approach to the formation of ring formation and breaking.
+%
+Finally, the algorithm presented herein allows for adaptive approaches that have heretofore been impossible.
+%
+\section{Exploration of Chemical Space}
+%
+The first goal that this work accomplished was the introduction of a formal and rigorous basis for approaches such as Chemical Monte Carlo (CMC)~\cite{Pitera1998}.
+%
+While the concept of CMC is attractive, there was no basis to guarantee that the sampling algorithm would be asymptotically correct.
+%
+By resorting to Reversible Jump MCMC~\cite{GREEN1995}, I am able to provide a basis for jumps in chemical space that provably preserves the correct invariant distribution, allowing the application of additional techniques such as stochastic approximation.
+%
+\subsection{Chemical State Proposals}
+%
+The first part of the work addresses the requirements as well as the possibilities for making proposals to jump to different chemical states.
+%
+Unlike in previous algorithms such as Multisite Lambda Dynamics~\cite{Knight2011}, the set of ligands that one chooses for a calculation can be quite diverse.
+%
+As such, a mechanism of efficiently proposing jumps from one state to another must be developed.
+%
+In addition to setting forth the conditions for correctness, one must also develop a method that is reasonably efficient.
+%
+Although formal statements exist to define which chemical states would be most "near" each other in a sense, known as thermodynamic length~\cite{Crooks2007}, these expressions are intractable to compute.
+%
+Therefore, one must resort to heuristics.
+%
+As a first attempt, I used the number of atoms deemed to be in common between the current and proposed molecule by a maximum common substructure search (MCSS), itself an algorithm with several hyperparameters.
+%
+I conducted an exploration of various parameters for the MCS search, determining that for some pairs this is a highly influential setting, while for others it matters far less.
+%
+Finally, I presented groundwork for future work in the realm of chemical state proposals, especially techniques that would allow for a chemical space that is not predefined in the beginning of the calculation.
+%
+I also described aspects of the algorithm that can be combined with the power of machine learning to leverage the best of both techniques.
+%
+\subsection{Dimension Matching}
+%
+Once it is decided to attempt a jump to a new chemical state, with atoms assigned to one molecule, the other, or both, the task becomes to insert the missing atoms and delete the ones that do not belong to the following state.
+%
+This procedure, known as dimension matching, is a critical component of the algorithm.
+%
+First of all, there are several important requirements that must be imposed.
+%
+The proposal must be accompanied by a normalized proposal probability to compute the requisite acceptance test.
+%
+Second, the proposal must be exact--that is, it cannot be drawn by an approximate scheme (such as most MCMC algorithms).
+%
+Third, the probability of proposing atoms that are being deleted must also be computable exactly.
+%
+These restrictions combine to eliminate several straightforward approaches to inserting missing atoms.
+%
+In this work, I developed a scheme based on Configurational Bias Monte Carlo (CBMC)~\cite{Siepmann1992} that meets all of these criteria.
+%
+This scheme inserts atoms one at a time.
+%
+First, it proposes a valid order of proposal stochastically.
+%
+Then, for each atom to be proposed, a dihedral angle with 3 position-bearing atoms is chosen stochastically to establish a reference frame.
+%
+The proposal then proceeds by drawing a bond length $r$ and angle $\theta$ from normal distributions, as both are represented harmonically in common forcefields such as AMBER~\cite{Ponder2003}.
+%
+The dihedral distribution, however, is not integrable in closed form.
+%
+To remedy this, the algorithm drives the atom around its dihedral angle, computing a potential energy at each point.
+%
+This dihedral scan is normalized and used as a proposal probability for the dihedral angle $\phi$.
+%
+This scheme is computationally efficient and meets the theoretical requirements imposed by the proof of correctness of the entire algorithm.
+%
+An interesting challenge with the CBMC method is to allow the closure of rings--something very difficult for other approaches.
+%
+In this work, I employed a method inspired by~\cite{Wick2000}.
+%
+In this method, I add additional guide force terms so that an atom is almost always placed in a position that will ultimately close the ring.
+%
+This adds a significant degree of power to this algorithm, as it is now capable of very complex transformations that would otherwise have been prohibitively expensive or impossible.
+%
+By setting forth these requirements, I have also left open considerable ground for future development.
+%
+One interesting avenue to follow would be to use one of a family of algorithms known as particle filtering~\cite{Andrieu2010pmcmc, COMBE2003}.
+%
+This family of algorithms constructs an ensemble of proposals, and at various points during the proposal sequence (in this case, a sequence of atoms), allows the proposals to be resampled from the current set according to a weight.
+%
+Practically speaking, this approach permits the algorithm to discard "bad choices" that did not become apparent until later in the proposal due to long-range dependencies.
+%
+This can especially help with challenges such as ring closure, where an apparently reasonable atom proposal can result in a disastrous geometry once a ring cannot be closed.
+%
+In order to implement a scheme such as this, care will need to be taken to compute the weights at each step in a computationally-efficient manner.
+%
+This is likely to be fertile ground for future research.
+%
+Finally, another fascinating potential improvement of this algorithm is to simply resort to a deep learning-based conformation generator.
+%
+While some of these conformation generators do not meet the above requirements, there have been fascinating recent advances~\cite{schutt2018} that could enable very rapid and accurate conformer generation in compliance with this algorithm's requirements.
+%
+It should be noted that such an algorithm used in this case should be trained on \emph{simulated} data, not experimental or quantum mechanical data, as the other sources would not appropriately match the forcefield.
+%
+\subsection{NCMC Switching}
+%
+Once the new atoms can be given positions, the task of the algorithm is of course not finished.
+%
+Although in vacuum this may be all that is required, most calculations are carried out in explicit solvent.
+%
+This means that each new atom will likely clash not only with a receptor atom, but also potentially with a solvent atom.
+%
+These clashes will result in very unfavorable acceptance probabilities and virtually guaranteed rejection.
+%
+To resolve this, I integrated the approach of~\cite{Nilmeier2011, Neal2001}, known either as nonequilibrium switching or annealed importance sampling, into this algorithm.
+%
+This approach works as follows. 
+%
+First, the new atoms are introduced in a decoupled state.
+%
+We then take one step of dynamics, followed by a step changing the control parameters of the simulation.
+%
+These parameters, canonically called $\lambda$, control whether the parameters of the system behave more closely like the initial molecule or the final molecule.
+%
+We alternate between taking a step of dynamics and a step in control parameter space, accumulating a work---a change in potential energy---each time we change the control parameters.
+%
+At the conclusion of the protocol, the contribution to the overall acceptance probability becomes simply the exponentiated negative work.
+%
+In this way, we can insert atoms into densely packed systems, allowing the system to reorganize and dramatically improving acceptance probabilities.
+%
+This algorithm is attractive in its simplicity but also in its potential for future work.
+%
+A significant body of work exists regarding the so-called thermodynamic length~\cite{Crooks2007}.
+%
+Through this formalism, the path through control parameter space that we take can be optimized.
+%
+As such, the details of the rest of the algorithm can be simplified if this component can "clean up" most unfavorable configurations.
+%
+There is ample room to design not only on-average better protocols, but even protocols that are specific to each pair of ligands.
+%
+Such information is useful not only for this algorithm, but also for others using nonequilibrium switching for free energy calculations~\cite{Aldeghi2018}.
+%
+\subsection{Stochastic Approximation}
+%
+Having collected the necessary components to maintain the invariant distribution over configurations and chemicals, we now turn to achieving an appropriate weighting of these states.
+%
+Traditionally, in such expanded ensemble simulations, one might resort to a stochastic approximation method to achieve even sampling~\cite{Wang2001,Tan2017,Liang2007}.
+%
+This not only results in the individual state weights converging to the relative free energies, but more importantly forces sampling of various states that other otherwise made unfavorable by even moderate free energy differences.
+%
+However, in this case, we have defined a distribution over many different chemical species.
+%
+We thus have the opportunity to not merely achieve even sampling, but to adaptively direct sampling toward states that are more likely to be favorable.
+%
+This is an approach that is very difficult or impossible to achieve in other schemes.
+%
+Here, I perform it by adding extra recursion steps to the stochastic approximation algorithm, allowing the \emph{target} weights of various states to depend on the current stochastic approximation weights, where before they were fixed.
+%
+This allows us to adaptively reweight chemical states so that sampling focuses on those that achieve some desirable free-energy based property, such as binding, selectivity, multiple targeting, and more.
+%
+Much future work can be accomplished in this realm.
+%
+One of the most pressing issues is a reasonable initialization of the stochastic approximation weights, since the adaptive algorithm performs best when initialized near its optimum.
+%
+One interesting approach that future work can take is to use a machine learning algorithm, which may be less accurate than the free energy calculation, to initialize the weights.
+%
+This may provide a "good guess" that will then be refined by the calculation.
+%
+Another fascinating future approach might involve adapting the weights of a function approximator such as a neural net rather than the individual chemical state weights.
+%
+This may have several advantages: it can accommodate the insertion of new chemical states easily, it can then be used as a trained model (or fine-tuned on experiment) after the fact, and it can be initialized to a reasonable starting position.
+%
+One potential challenge of this approach is to ensure that the convergence of the function approximator's parameters occurs in a reasonable amount of time.
+%
+Finally, one might imagine using a Bayesian scheme to determine the weights, a method not explored here but discussed with several colleagues.
+%
+All of these are promising extensions to the present algorithm.
+%
+\section{Transdimensional Nonequilibrium Switching}
+%
+Drawing from the work on the chemical space sampling algorithm, it becomes apparent that there is another algorithm lurking within it.
+%
+This algorithm involves so-called transdimensional nonequilibrium switching.
+%
+Unlike standard nonequilibrium switching, where a hybrid system consisting of a union of atoms of both endpoints must be simulated at equilibrium, transdimensional nonequilibrium switching simulates only the non-alchemical endpoints.
+%
+By pushing the atom mapping and dimension jump into the nonequilibrium switching protocol, this algorithm enables the above techniques to be immediately applied on a massive scale with parallel resources.
+%
+Once equilibrium simulations have begun, in parallel, transdimensional nonequilibrium switching trajectories can be initiated in parallel.
+%
+This approach offers two major advantages over the previous algorithms.
+%
+One, it enables only a single equilibrium simulation for each molecule in the set (as opposed to a pair of simulations for every pair), significantly cutting down on equilibrium simulation time.
+%
+More fascinatingly, it enables the atom mapping parameters to be adapted online, as the equilibrium samples that are used to start the nonequilibrium trajectories are no longer dependent on the atom map.
+%
+This is a very powerful approach that lends itself to sophisticated Bayesian design schemes, where molecules can be optimized not only for free-energy based objectives, but also for other heuristic and cost objectives.
+%
+Future work in this direction will bring the field closer to very large-scale use of free energy calculations earlier in the drug discovery pipeline.
+%
+\section{Conclusion}
+%
+This work has made three main contributions to the field of free energy computation.
+%
+First of all, it has developed a scheme which can adaptively sample regions of chemical space according to free-energy based design criteria.
+%
+This algorithm also leaves open the theoretical requirements for any additional extensions; as such, it can be treated in a "plug and play" manner if the requirements are met.
+%
+Second, in the course of developing this algorithm, I have also enabled the forming and breaking of fused ring systems, which exist in many molecules relevant to drug discovery and materials science.
+%
+Finally, I extend the chemical space sampling algorithm to be applicable to the nonequilibrium switching setting, a method I call transdimensional nonequilibrium switching.
+%
+This enables the above algorithm to be immediately adapted to highly-parallel heterogeneous compute environments like the ones used commonly today.
+%
+It is my hope that these algorithmic advances lay the groundwork for significantly more work on scaling free energy calculations to situations both with resource constraints and very large sets of molecules.

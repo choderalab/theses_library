@@ -1,0 +1,258 @@
+\chapter{Introduction}
+%
+\section{The role of molecular design in drug discovery}
+%
+Drug discovery includes many facets, from identifying the relevant biology to performing studies ensuring that a drug of interest is effective for the target population~\cite{Paul2010}. 
+%
+Typically, the process starts with the identification of the so-called target molecule based on biological studies~\cite{Paul2010}.
+%
+Once this target molecule (usually a protein~\cite{Santos2016}) is found, the task of molecular design begins.
+%
+Often, the target of interest is an enzyme~\cite{Santos2016} or a receptor where a natural small molecule binds.
+%
+The task of the designer, then, is to produce a molecule that can outcompete the natural ligand, partially or fully ablating the activity of the target.
+%
+Of course, molecular design in drug discovery is not limited to this case.
+%
+There are many other cases where a small molecule is sought that binds to an alternative, or allosteric binding site~\cite{Lee2009,Nussinov2013}, or even one that causes the association of the target with another protein, as in PROTAC~\cite{Churcher2017, Tinworth2016}.
+%
+In many of these cases, rational design begins with the determination of the structure of the target, either by modeling or by experiment~\cite{Mandal2009}, after which the task of actually designing the molecule can begin.
+%
+In the last several decades, computers have become instrumental in aiding this rational design phase~\cite{Lu2018,Wang2015}, allowing chemists to filter out unwanted compounds before testing or synthesis, and providing directions for novel ideas.
+%
+There are many computer-based approaches, ranging from machine learning~\cite{Lo2018,Chen2018} to physical modeling~\cite{Michel2010, Swanson2004, qvist1994, Shirts2007}.
+%
+In this work, I will focus on physical modeling approaches, though even in that realm there are many opportunities for machine learning approaches to make valuable inroads.
+%
+\subsection{Physical modeling of drug-target interaction}
+%
+An attractive avenue for computer-assisted drug discovery is to model, at an atomic scale, how a hypothetical compound and its target might interact.
+%
+\subsubsection{Docking}
+%
+Given that we often begin with a snapshot of the target's structure, one approach, known as molecular docking~\cite{Shoichet2002, Cheng2012}, holds the target (and often the small molecule) rigid, and uses a scoring function to assign an optimal position for the atoms of the small molecule.
+%
+Scoring many such molecules like this allows us to rank hypothetical molecules, a process known as virtual high-throughput screening~\cite{Shoichet2004}.
+%
+This practice has found wide adoption in drug discovery~\cite{Shoichet2004} due to its relative computational simplicity and its intuitive nature (one can examine scored poses manually).
+%
+However, docking does suffer from an important shortcoming: the fact that the receptor is held rigid means that the flexibility of the target is not taken into account~\cite{warren2006}.
+%
+Fortunately, statistical mechanics offers us a path forward to overcome this limitation: free energy calculations~\cite{Gilson1997}.
+%
+\subsection{Free energy calculations}
+%
+Given a model of atomic-scale interactions known as as forcefield, we can model the configurational ensembles of ligand-target association and rigorously (within the confines of the forcefield) compute the strength of the association.
+%
+For the simple bimolecular association reaction,
+%
+\begin{equation} \label{eq:bimolecular-association}
+    P + L \leftrightharpoons PL 
+\end{equation}
+%
+the so-called absolute free energy of binding, $\Delta G$, can be computed in terms of a ratio of partition coefficients \cite{Gilson1997},
+%
+\begin{equation} \label{eq:1}
+    \Delta G = - k_B T \ln \left[ \frac{Z_{PL}}{Z_L \, Z_P} \right] + c
+\end{equation}
+%
+where $c$ is an additive constant and the individual partition coefficients $Z_*$ are given by,
+%
+\begin{equation}\label{eq:2}
+    Z_* = \int dx \, e^{-u_*(x)}
+\end{equation}
+%
+Here, $x \in \mathbb{R}^{3N}$ is the positions of the atoms, $k_B$ is the Boltzmann constant, $T$ is the absolute temperature, and $u_*(x) = \beta U_*(x)$ is the reduced potential~\cite{Shirts2008} for species $*$, with $\beta = (k_B T)^{-1}$ denoting the inverse thermal energy and $U_*(x)$ the corresponding potential energy.
+%
+Although this form is apparently very convenient, the integral in \label{eq:1} is extremely high dimensional, as each atom contributes three degrees of freedom. 
+%
+For realistic systems, however, the dimensionality can easily exceed 100,000 degrees of freedom, making deterministic approximations completely infeasible.
+%
+However, it is nonetheless possible to estimate the ratio above using stochastic methods such as Markov chain Monte Carlo (MCMC)~\cite{Liu2004}.
+%
+These methods have seen a massive upsurge in interest in recent years as commercial applications have burgeoned and the availability of cheap computing power has grown~\cite{Wang2015}.
+%
+Despite this, it remains very costly to perform a free energy calculation. 
+%
+On modern hardware, it can easily take 8 to 12 hours to perform a rough free energy calculation~\cite{Wang2015}.
+%
+Coupled with the short timetables on which industrial medicinal chemists operate (based on personal communication with industrial scientists), extending free energy calculations to practical use is a formidable challenge.
+%
+\subsection{Typical approaches to computation of binding free energy}
+%
+There are several Monte Carlo-based approaches commonly used to estimate the binding free energy of a small molecule to a target protein.
+%
+Since we are interested purely in the ratio~\cite{Gelman1998, Gilson1997, Shirts2008}, the estimators used here will directly estimate the ratio.~\cite{Shirts2008,Meng1996SimulatingRO,Gelman1998}
+%
+The quality of this ratio estimate will depend strongly on the overlap between the probability distributions at each endpoint~\cite{Meng1996SimulatingRO, Gelman1998}.
+%
+Because of this strong dependence on the overlap between the endpoints (which is often quite low and a cause of high Monte Carlo errors)~\cite{Gelman1998}, it is prudent to construct intermediate nonphysical or "alchemical" states that contain a mixture of the parameters of either endpoint distribution.
+%
+In this way, neighboring distributions can be constructed with high overlap, enabling efficient estimation.
+%
+For the purpose of this work, we will denote the construction of neighboring distribution using a (possibly multidimensional) control parameter $\lambda$, which indexes over intermediate distributions as $p(x; \lambda) \propto exp(-u(x; \lambda))$.
+%
+The control parameter is defined so that $\lambda=0$ refers to the distribution in the denominator of the partition function ratio, and $\lambda=1$ refers to the distribution in the numerator.
+%
+There are many methods by which one could exploit this approach; in this work, we will focus on the method of expanded ensembles~\cite{lyubartsev1992}, as well as the method of nonequilibrium switching~\cite{Hummer2001, Aldeghi2018}.
+%
+\subsection{Expanded Ensembles}
+One approach that is becoming increasingly common is the method of expanded ensembles~\cite{lyubartsev1992}.
+%
+In this method, one constructs a joint distribution $p(x, k)$, where $x \in \mathbb{R}^{3N}$ again denotes atomic positions, and the discrete index $k \in \{1, 2, \ldots, K\}$ indexes over some set of $K$ distributions between which one would want relative free energies:
+%
+\begin{equation} \label{exen}
+    p(x, k) \propto e^{-u_k(x) + g_k}
+\end{equation}
+%
+%For example, one could construct a molecular system with a control parameter $\lambda$ such that when $\lambda=0$, the potential is that of a given molecule, and when $\lambda=1$, the potential is that of a different molecule.
+% TODO: You may need to move this introduction to continuous lambda elsewhere since we are only using discrete indices here.
+%
+Note that we have also introduced $K$ free parameters, or log weights, $g_k$, $k \in \{1, 2, \ldots, K\}$, which can be used to bias the sampling of the mixture components.
+%
+%Intermediate values of $\lambda$ in this example would represent a distribution that is a hybrid of the two endpoints.
+% TODO: Commented this out because we don't use intermediate $\lambda$ yet.
+%
+Having constructed this joint distribution, one could sample a sequence of iterates $(x_t, s_t)$, $t \in \{1,\ldots, T\}$, from the expanded ensemble defined by $p(x, k)$ by the following algorithm:
+\begin{eqnarray} \label{sampling_lambda_exen}
+    x_{t+1} &\sim& p(x~|~s_t) \: \propto \: e^{-u_{s_t}(x)} \\
+    s_{t+1} &\sim& p(s~|~x_{t+1}) \: = \: \frac{e^{-u_s(x_{t+1}) + g_s}}{\sum\limits_{k=1}^{K} e^{-u_k(x_{t+1}) + g_k}}
+\end{eqnarray}
+%
+where $u_k(x)$ is the reduced potential~\cite{Shirts2008,chodera2011} of configuration $x$ in thermodynamic state $k$.
+%
+Following such a simulation, it should be apparent that
+%
+\begin{equation}
+    \frac{p(k = m)}{p(k = n)} = \frac{\int dx \, p(x, m)}{\int dx \, p(x, n)} = \frac{Z_m}{Z_n}
+\end{equation}
+%
+where $Z_n$ is defined as in Eq.~\ref{eq:2}.
+%
+However, since the relative free energies of the different components of the mixtures are the logarithm of the relative populations, 
+%
+\begin{eqnarray}
+\Delta G = G_m - G_n = - \ln \frac{Z_m}{Z_n} = - \ln \frac{p(k = m)}{p(k = n)}
+\end{eqnarray}
+%
+even a small free energy difference can result in very large population differences.
+%
+These large population differences make it very difficult to achieve enough samples of each state such that a reliable free energy estimate can be made.
+%
+Recall that the expanded ensemble defined in Eq.~\ref{exen} contains log weights $g_k$ that allow us to bias sampling.
+%
+There are several tools available to adaptively reweight the mixture components via the bias term, compensating for potentially large differences in populations~\cite{Liang2007,Wang2001,Tan2017}
+%
+One of the most recent of these tools is known as Self-Adjusted Mixture Sampling (SAMS)~\cite{Tan2017}.
+%
+This algorithm for adapting the biasing terms $g_k$ is appended to the sampling algorithm in Eq.~\ref{sampling_lambda_exen} as:
+%
+\begin{eqnarray} \label{binary-sams}
+     g^{(t-1/2)}_k &=& g^{(t-1)}_k - t^{-1} \frac{\delta_{s_t, k}}{\pi_k} \\
+     g^{(t)}_k &=& g^{(t-1/2)} - g^{(t-1/2)}_1
+\end{eqnarray}
+%
+where $\delta_{s_t, k}$ is unity if the sampler state $s_t$ is currently visiting state $k$ and zero otherwise, and $\pi_k$ represents the desired target probability for state $k$.
+%
+This stochastic approximation technique provably minimizes the asymptotic variance of the weights~\cite{Tan2017}, and if all target probabilities $\pi_k$ are set such that $\pi_k = \frac{1}{K}$, where $K$ is the number of thermodynamic states, the log weights will asymptotically converge to the relative free energies of the different states~\cite{Tan2017}.
+%
+By compensating for the differences in free energies between different mixture components, we can now efficiently sample the expanded ensemble and post-process the data to get high quality free energy estimates.
+%
+However, the issue remains that each expensive calculation only yields a single relative free energy estimate, where many are needed to sort through the almost innumerable potential designs.
+%
+\subsection{The search space for designs is very large}
+How many synthetically accessible chemical species are there?
+%
+Relatively compact databases such as GDB-17~\cite{Ruddigkeit2012} provide over 100 billion feasible compounds of a certain size.
+%
+This highlights the other significant challenge--in addition to exploring and integrating out the complex landscape of molecular conformations, we must also explore the even more poorly characterized space of possible chemicals.
+%
+This space is not only large, but also discrete, with no immediately obvious ordering.
+%
+However, all hope is not lost---the Monte Carlo methods discussed above will be brought to bear on this problem as well.
+%
+\subsection{Monte Carlo methods can aid such a large search space}
+%
+The above presentation of the method of expanded ensembles almost immediately suggests an interesting idea---rather than using the discrete parameter to index over intermediate distributions, use it instead to index over different chemical species~\cite{Pitera1998}.
+%
+This brings to bear the power of Monte Carlo algorithms on the molecular design problem.
+%
+However, each of the previous attempts contain limitations that will be overcome in this work.
+%
+\section{Chemical Space Sampling}
+%
+At its core, the concept of chemical space sampling in the context of molecular simulation first consists of defining the expanded ensemble in Eq.~\ref{exen} to be indexed over different chemical identities, rather than intermediate distributions.
+%
+The additional parameter, $g_s$, enables us to apply arbitrary weighting to different states, which will in turn enable the adaptive work contained in this thesis. 
+%
+\subsection{Chemical Monte Carlo}
+%
+In \cite{Pitera1998}, it was suggested that one could simply define the different distributions indexed by $s$ as the ensembles of corresponding chemicals.
+%
+Then, by applying a clever weighting, one could even bias the simulation toward favorable chemical states.
+%
+However, this approach suffered from several drawbacks.
+%
+First of all, when one is attempting to jump from one chemical state to another, one must account for the fact that the number of atoms (and hence the dimensionality) of the two states is likely different.
+%
+Second, it may be computationally infeasible in many cases to derive the clever weighting that causes sampling to favor the states of interest (for instance, those that bind tightly to the target, or those that bind tightly to one target but not another).
+%
+Finally, even if the above problems were surmounted, it can suffer difficulty getting acceptances in the more accurate explicit solvent, as newly-introduced atoms are likely to clash with other atoms.
+%
+\subsection{Lambda dynamics}
+%
+Another interesting concept is that of Lambda Dynamics~\cite{Knight2009} and its related technique, Multisite Lambda Dynamics~\cite{Knight2011, Ding2017}. 
+%
+This technique replaces the discrete index $k$ with a continuous (and possibly multidimensional) parameter $\lambda$, and performs dynamics on that parameter as well as on the configurational degrees of freedom.
+%
+The $\lambda$ parameter now allows the simulation to visit not just the interesting endpoints, but intermediate states as well.
+%
+Since it visits the intermediate states, it can potentially overcome the issue that chemical Monte Carlo has with explicit solvent.
+%
+However, several problems still remain.
+%
+One issue is that a biasing potential must be used to prevent the $\lambda$ parameter from spending all of its time in uninteresting intermediate states.
+%
+One may grow concerned as well that because the simulation spends so much time away from the endpoints, reweighting to recover an estimate of the true free energy difference may be too difficult.
+%
+Another is that when the technique is extended to multiple sites, one must discover an efficient protocol through the now-high dimensional $\lambda$ space. 
+%
+Simply exploring this space (or indeed even adaptively adding biasing potentials as in metadynamics) will quickly become very difficult.
+%
+\subsection{Nonequilibrium Switching}
+%
+Another method that has gained in popularity for free energy calculations is known as nonequilibrium switching~\cite{Aldeghi2018, Hummer2001, Neal2001}.
+%
+In this approach, equilibrium simulations at the endpoints of a set of intermediate distributions are first conducted.
+%
+Then, from the equilibrium snapshots, a nonequilibrium switching move is carried out: that is, one takes a step of dynamics, then alters the control parameter $\lambda$ slightly, then another step, and so on.
+%
+Each time the control parameter is incremented, we compute the change in the potential energy. This change is then added to a work value.
+%
+At the conclusion of the switch (when the control parameters have reached the other endpoint), the work values in each direction are used to estimate the free energy difference~\cite{Neal2001,Hummer2001,Aldeghi2018, dellago2014}.
+%
+In this scheme, the hyperparameters of the algorithm include the length of the protocol (how large each step of the control parameters is) and the schedule of changes to the control parameters.
+%
+The emergence of massively parallel hardware and cloud computing has made this approach interesting, as the nonequilibrium switching trajectories are computationally independent of each other.
+%
+This means that with the availability of many processing units, one could potentially spare a considerable amount of wall clock time by running nonequilibrium switching trajectories simultaneously.
+%
+\section{Summary}
+%
+Over the past several years, free energy calculations have reached a mature stage.
+%
+However, there is still a considerable amount of work to be done.
+%
+Calculations using the techniques described above are still very expensive, and can only compute relative free energies over pairs or, in some cases, small sets of congeneric series.
+%
+In this work, I aim to accomplish three goals.
+%
+First, I aim to develop a rigorous formulation of a chemical state sampling algorithm that can be used not only to compute relative free energies, but can be used to adaptively prioritize sampling based on a free energy based objective.
+%
+Second, and as a component of the first, I aim to develop a scheme that allows jumps to molecules of quite different topology and geometry, adding complex structure such as fused rings.
+%
+This, too, is developed in a theoretically rigorous formalism that allows the practitioner to be assured that the algorithm is asymptotically correct.
+%
+Finally, I aim to develop a formulation of the methods developed here that is efficient in the highly parallel and heterogeneous computing environments that dominate modern high-performance computing.
+%
+The development of theoretically rigorous foundations for each of these additionally enables future work to proceed straightforwardly from here.

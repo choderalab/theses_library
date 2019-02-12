@@ -1,0 +1,78 @@
+\chapter{Reversible Jump MCMC for Molecular Simulation}
+
+\section{A Rigorous and Efficient Formulation of Chemical Monte Carlo}
+As an alternative to the above-mentioned schemes, I propose here an algorithm for sampling from an expanded ensemble with each mixture component representing a different chemical species.
+%
+I furthermore provide a proof that this algorithm preserves the expanded ensemble as an invariant distribution.
+%
+Finally, I apply an extension of the Eq.~\ref{binary-sams} algorithm to adaptively achieve target weights that prioritize more favorable chemical species.
+%
+\subsection{Key difficulties}
+%
+In deriving and implementing a rigorous formulation of chemical space sampling that is also efficient, there are several key difficulties.
+%
+One difficulty, as discussed above, is that the space itself is discrete without a good idea of neighborhoods.
+%
+Unlike a continuous-valued parameter, it is not obvious which proposals should be given a high probability.
+%
+Additionally, the jumps between chemical states will involve a change in the number of atoms, necessitating additional corrections to the acceptance criterion and the development of efficient dimension-matching algorithms.
+%
+Compounding the issue is the need to insert atoms into a condensed phase system with a reasonable acceptance probability. 
+%
+For this, I resort to Nonequilibrium Candidate Monte Carlo~\cite{Nilmeier2011}, which carries with it a collection of its own fascinating algorithmic challenges.
+%
+Finally, I extend existing stochastic approximation algorithms to adaptively reweight the different chemical states in order to achieve target sampling probabilities that match the free energy objective of interest.
+%
+\subsubsection{How are neighbors defined in chemical space?}
+%
+The first of these key difficulties is how to define neighbors in chemical space.
+%
+Ordinarily, the design of an efficient MCMC algorithm relies on a suitable proposal distribution\cite{Liu2004}; that is, a probability distribution from which one can easily sample and which is capable of providing both a suitably high acceptance probability and a suitable degree of exploration of the state space
+%
+However, in the case of chemical state sampling, it is not clear, given that a chain is currently visiting chemical state $k$, which $k'$ would result in a suitable acceptance probability.
+%
+Furthermore, as discussed later, the "neighborhood" of chemicals will change depending on the target, making optimization of these parameters difficult to perform in the general case.
+%
+In this work, I resort to a heuristic proposal distribution that is simple to compute and reasonably effective.
+%
+\subsubsection{Transdimensional space}
+%
+Even if one can hop through chemical space with enough speed, how does one actually perform the proposed jumps?
+%
+For this, I resort to Reversible Jump Markov chain Monte Carlo (RJ-MCMC)~\cite{GREEN1995}, a formulation of Metropolis-Hastings which includes correction factors for when the current and proposed states are not defined on spaces of the same dimensionality.
+%
+Although the theory presented in~\cite{GREEN1995} is extremely general, performing this task efficiently (while still meeting the necessary requirements for preserving the target distribution) is quite difficult.
+%
+Additionally, and related to the chemical neighborhood problem, the dimension-jump challenge also includes the question of which degrees of freedom should be considered to be in common between the current and proposed system?
+%
+On one hand, including more degrees of freedom as common results in a more straightforward task for the dimension-matching algorithm.
+%
+On the other, if a set of atoms is said to be in common, but occupies a very different configurational ensemble, the acceptance probability may be very poor.
+%
+In this work, I discuss several approaches to solve these issues in the context of molecular simulation.
+%
+\subsubsection{How do we favor "good" molecules in a large set?}
+%
+Lastly, even if we can construct the Markov kernel that allows us to sample the distribution of interest, how to we ensure we spend our simulation time wisely?
+%
+Large free energy differences between different chemical states will all but ensure that we have great difficulty exploring chemical space.
+%
+In the past, practitioners have used stochastic approximation successfully to adapt the various weights $g_s$ of the different chemical states, typically to achieve even sampling.~\cite{Wang2001}
+%
+More recently, an asymptotically optimal stochastic approximation algorithm known as SAMS~\cite{Tan2017} has become available.
+%
+However, when sampling a large chemical space, one would prefer to gravitate toward favorable states, not even sampling.
+%
+To that end, in this work I develop an extension of the SAMS algorithm that allows us to couple multiple MCMC chains and achieve a target sampling distribution based on a free-energy objective.
+%
+\subsection{Transdimensional Nonequilibrium Switching}
+%
+In addition to allowing a rigorous formulation of the chemical Monte Carlo expanded ensemble framework, as a byproduct, the algorithm developed here also permits a transdimensional version of nonequilibrium switching.
+%
+This approach, discussed in chapter 7, allows a highly parallel application of the reversible jump algorithm presented here.
+%
+Since the atoms present in one molecule but absent in another are added as part of the proposal attempt, this allows one to more efficiently use equilibrium simulation.
+%
+Additionally, it allows the possibility of ring forming and breaking, which is otherwise quite difficult in free energy calculations, which has been a problem considered difficult for some time~\cite{Liu2015}.
+%
+Finally, allowing for a considerable degree of parallelism, this allows one to use the reversibly jump algorithm along with a very large number of processing units to minimize the wait in wall clock time before predictions are available.

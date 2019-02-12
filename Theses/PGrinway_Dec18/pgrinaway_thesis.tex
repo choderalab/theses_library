@@ -1,0 +1,101 @@
+\documentclass[phd,tocprelim]{cornell}
+%% Added to avoid the \ifpdf name clash error
+\let\ifpdf\relax
+%
+% tocprelim option must be included to put the roman numeral pages in the
+% table of contents
+%
+% The cornellheadings option will make headings completely consistent with
+% guidelines.
+%
+% This sample document was originally provided by Blake Jacquot, and
+% fixed up by Andrew Myers.
+%
+%Some possible packages to include
+\usepackage{graphicx,pstricks}
+\usepackage{graphics}
+\usepackage{moreverb}
+\usepackage{subfigure}
+\usepackage{epsfig}
+\usepackage{subfigure}
+\usepackage{hangcaption}
+\usepackage{txfonts}
+\usepackage{palatino}
+\usepackage{amssymb}
+\usepackage{physics}
+\usepackage{appendix}
+\usepackage[...]{microtype}
+\usepackage[all]{nowidow}
+%if you're having problems with overfull boxes, you may need to increase
+%the tolerance to 9999
+\tolerance=9999
+\widowpenalty10000
+
+\bibliographystyle{plain}
+%\bibliographystyle{IEEEbib}
+
+\renewcommand{\caption}[1]{\singlespacing\hangcaption{#1}\normalspacing}
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.75}
+
+\title {Scalable Molecular Design Using Reversible Jump MCMC and Stochastic Approximation}
+\author {Patrick B. Grinaway}
+\conferraldate {May}{2019}
+\degreefield {Ph.D.}
+\copyrightholder{Patrick B. Grinaway}
+\copyrightyear{2019}
+
+\begin{document}
+
+\maketitle
+\makecopyright
+
+\begin{abstract}
+Despite the existence of useful models for atomic-scale interactions, designing novel molecules (such as drugs) using this information has been extremely difficult. The difficulty results from the nature of the model, which is both extremely high dimensional and multimodal, as well as the nature of the objective function, which is an expectation under this model. In prior work, these models would be leveraged by computing individual expectation values and using these to rank the various molecules. Here, we introduce a joint probability distribution of configurations and chemical states, allowing the simulation to visit different molecular identities as well as different configurations. This introduces the requirement for reversible jump MCMC, as a change in molecular identity results in a change in dimensionality of the configurations. We then combine this approach with the Self-Adjusted Mixture Sampling (SAMS) technique developed by Tan to achieve sampling of chemical identities according to an arbitrary prespecified distribution. We then sought to use the relative free energies of each state as the target distribution, effectively prioritizing favorable chemical states. However, this requires the estimation of free energies. To resolve this, we simultaneously run another MCMC chain that provides online estimates of the necessary free energies. We additionally generate a transdimensional version of nonequilibrium switching amenable to highly parallel hardware setups.
+\end{abstract}
+
+\begin{biosketch}
+Patrick Grinaway graduated from Lafayette College in 2011 with a Bachelor of Arts in Engineering Studies, focusing on coursework in Electrical and Computer Engineering. While he was attending Lafayette, he became fascinated with modeling complex systems and understanding biology. Under the mentorship of Professor Laurie Caslake, he studied the radiation tolerance of bacteria, and under the mentorship of Professor Michael Kelly, he studied the . After graduating, he briefly worked with Professor William Terzaghi of Wilkes University, studying the role of noncoding RNA in fine-tuning the expression of genes regulated by the gene phytochome A in \emph{O. sativa}. He joined the Physiology, Biophysics, and Systems Biology program in 2012 and became a member of the Chodera lab in 2013, where his work has focused on the development of Markov chain Monte Carlo algorithms for scalable free energy calculations.
+\end{biosketch}
+
+\begin{dedication}
+This thesis is dedicated to Florencia Fama, without whose constant support this work would have been impossible.
+\end{dedication}
+
+\begin{acknowledgements}
+I would like to acknowledge my advisor, John D. Chodera, for introducing me to the world of Markov chain Monte Carlo, as well as other Chodera lab members, in particular, Julie Behr, Ivy Zhang, and Hannah Bruce MacDonald, who contributed greatly to this project and Bas Rustenburg for excellent scientific discussions. I would also like to thank Silicon Therapeutics for providing funding for part of this work and in particular, Woody Sherman and Bryce Allen, who provided substantial intellectual contribution. Finally, it is critical that I acknowledge my thesis committee, which included Professors Alex Kentsis, Thomas Fuchs, and Zhiqiang Tan, as well as those attending my defense, including Professors Daniel Heller and Olivier Elemento.
+\end{acknowledgements}
+
+\contentspage
+\tablelistpage
+\figurelistpage
+
+\normalspacing \setcounter{page}{1} \pagenumbering{arabic}
+\pagestyle{cornell} \addtolength{\parskip}{0.5\baselineskip}
+
+\include{introduction}
+
+\include{chapter2}
+
+\include{chapter3}
+
+\include{chapter4}
+
+\include{chapter5}
+
+\include{chapter6}
+
+\include{chapter7}
+
+\include{chapter8}
+
+\include{conclusion}
+
+\appendix
+
+\include{appendix}
+
+\bibliography{sampleThesis}
+
+\end{document}
